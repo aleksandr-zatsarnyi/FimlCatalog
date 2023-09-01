@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  webserver:
+    container_name: webserver
+    build:
+        context: ./../
+        dockerfile: ./docker/webserver/Dockerfile
+        args:
+          - INSTALL_XDEBUG=${INSTALL_XDEBUG}
+    environment:
+        PHP_IDE_CONFIG: "serverName=Docker"
+    ports:
+      - "80:80"
+    volumes:
+      - ./../src:/var/www/html
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+volumes:
+  db_data:
