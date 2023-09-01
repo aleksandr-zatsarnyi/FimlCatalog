@@ -28,8 +28,17 @@ class MovieRepository {
         $sql =  'SELECT * FROM `movies` WHERE `title` = ?';
         $this->driver->prepareStatement($sql);
         $this->driver->bindParameters('s', $title);
+        $this->driver->execute();
+        $result = $this->driver->getResult();
+        $data = [];
 
-        return $this->driver->execute();
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+
+        $this->driver->closeStatement();
+
+        return $data;
     }
 
     public function findByActorName(string $name) {
