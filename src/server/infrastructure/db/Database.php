@@ -64,6 +64,13 @@ class Database {
 
     public function execute(): bool {
         return mysqli_stmt_execute($this->statement);
-        mysqli_stmt_close($this->statement);
+    }
+
+    public function getResult() {
+        return $this->statement->get_result();
+    }
+
+    public function closeStatement() {
+        $this->statement->close();
     }
 }

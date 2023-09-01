@@ -18,14 +18,8 @@ try {
 
 $service = new MoviesService(new MovieRepository($dataBase));
 
-if (!isset($_SESSION['username'])) {
-    header("Location: login.php");
-    exit();
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
-
 
     if ($action === 'add_movie') {
         $title = $_POST['title'];
@@ -44,9 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $action = $_GET['action'];
-    if ($action === 'find_movie_by_title') {
-        $movie = $service->findMoviesByTitle();
+    if (isset($_GET['action']) && $_GET['action'] === 'find_movie_by_title') {
+        $movie = $service->findMoviesByTitle($_GET['search_title']);
     }
     if (isset($_GET['action']) && $_GET['action'] === 'show_sorted_movies') {
         $sortedMovies = $service->getAllMovies();
@@ -72,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 </style>
 
 <body>
-<h1>Welcome, <?php echo $_SESSION['username']; ?>!</h1>
+<h1>Welcome</h1>
 <h2>Menu</h2>
 <ul>
     <li><a href="#" onclick="toggleForm('add_movie_form');">Додати фільм</a></li>
@@ -88,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <button type="submit">Видалити фільм</button>
 </form>
 
-<h2 id="add_movie">Додати фільм</h2>
 <form id="add_movie_form" class="hidden-form" method="POST" action="index.php">
     <input type="hidden" name="action" value="add_movie">
     <input type="text" name="title" placeholder="Title" required><br>
@@ -98,36 +90,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <button type="submit">Додати фільм</button>
 </form>
 
-<form id="find_movie_form" class="hidden-form" method="POST" action="index.php">
+<form id="find_movie_form" class="hidden-form" method="GET" action="index.php">
     <input type="hidden" name="action" value="find_movie_by_title">
     <input type="text" name="search_title" placeholder="Назва фільму" required><br>
     <button type="submit">Знайти фільм</button>
 </form>
 
-<h2 id="show_movie_info">Показати інформацію про фільм</h2>
 <form id="show_movie_info_form" class="hidden-form" method="POST" action="index.php">
     <input type="hidden" name="action" value="show_movie_info">
     <input type="text" name="movie_id" placeholder="ID фільму" required><br>
     <button type="submit">Показати інформацію</button>
 </form>
 
-<h2 id="show_sorted_movies">Список фільмів (відсортовані за назвою)</h2>
-<table>
-    <tr>
-        <th>Title</th>
-        <th>Release Year</th>
-        <th>Format</th>
-        <th>Actors</th>
-    </tr>
-    <?php foreach ($sortedMovies as $movie) { ?>
-        <tr>
-            <td><?php echo $movie['title']; ?></td>
-            <td><?php echo $movie['release_year']; ?></td>
-            <td><?php echo $movie['format']; ?></td>
-            <td><?php echo $movie['actors']; ?></td>
-        </tr>
-    <?php } ?>
-</table>
+<?php
+if (!empty($movie)) {
+    echo '<div id="searchResults">';
+    echo '<h2>Search Result</h2>';
+    echo '<ul>';
+    foreach ($movie as $film) {
+        echo '<hr>';
+        echo '<li>' . htmlspecialchars($film['title']) . '</li>';
+        echo '<li>' . htmlspecialchars($film['release_year']) . '</li>';
+        echo '<li>' . htmlspecialchars($film['format']) . '</li>';
+        echo '<li>' . htmlspecialchars($film['actors']) . '</li>';
+        echo '<hr>';
+    }
+    echo '</ul>';
+} elseif (isset($movie)) {
+    echo '<p>The movie not found</p>';
+}
+?>
+
 </body>
 <script>
     function toggleForm(formId) {
