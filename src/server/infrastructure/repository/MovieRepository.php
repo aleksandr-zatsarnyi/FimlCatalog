@@ -4,56 +4,66 @@ namespace App\Server\infrastructure\repository;
 
 use App\Server\dto\MoviesDTO;
 use App\Server\infrastructure\db\Database;
+use PDO;
 
 class MovieRepository {
 
-    private DataBase $driver;
+    private PDO $db;
 
-    public function __construct(DataBase $driver) {
-        $this->driver = $driver;
+    public function __construct(PDO $driver) {
+        $this->db = $driver;
     }
 
-    public function save(MoviesDTO $dto): bool {
-        $sql = 'INSERT INTO `movies`(`title`, `release_year`, `format`, `actors`) VALUES (?, ?, ?, ?)';
-        $this->driver->prepareStatement($sql);
-        $this->driver->bindParameters('siss', $dto->getTitle(), $dto->getReleaseYear(), $dto->getFormat(), implode(', ', $dto->getStars()));
-        return $this->driver->execute();
+    public function getAllMovies() {
+        $query = "SELECT * FROM movies ORDER BY 'title'";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAll() {
-        return $this->driver->query('SELECT * FROM `movies` ORDER BY `title`');
+    public function addMovie(MoviesDTO $dto): bool {
+        $title = $dto->getTitle();
+        $release_year = $dto->getReleaseYear();
+        $format = $dto->getFormat();
+        $stars = implode(',', $dto->getStars());
+
+        $query = "INSERT INTO movies (title, release_year, format, stars) VALUES (:title, :release_year, :format, :stars)";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':release_year', $release_year);
+        $stmt->bindParam(':format', $format);
+        $stmt->bindParam(':stars', $stars);
+        return $stmt->execute();
     }
 
-    public function getByTitle(string $title) {
-        $sql =  'SELECT * FROM `movies` WHERE `title` = ?';
-        $this->driver->prepareStatement($sql);
-        $this->driver->bindParameters('s', $title);
-        $this->driver->execute();
-        $result = $this->driver->getResult();
-        $data = [];
+    public function deleteMovie($id) {
+        $query = "DELETE FROM movies WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
 
-        while ($row = $result->fetch_assoc()) {
-            $data[] = $row;
-        }
+    public function findByTitle(string $title) {
+        $query = "SELECT * FROM movies WHERE title = :title";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':title', $title);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        $this->driver->closeStatement();
-
-        return $data;
+    public function findById(int $id) {
+        $query = "SELECT * FROM movies WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function findByActorName(string $name) {
-        $sql =  'SELECT * FROM `movies` WHERE `title` = ?';
-        $this->driver->prepareStatement($sql);
-        $this->driver->bindParameters('s', $name);
-
-        return $this->driver->execute();
-    }
-
-    public function removeMovie(int $id) {
-        $sql = 'DELETE FROM `movies` WHERE id = ?';
-        $this->driver->prepareStatement($sql);
-        $this->driver->bindParameters('i', $id);
-
-        return $this->driver->execute();
+        $query = "SELECT * FROM movies WHERE stars LIKE CONCAT('%', :actor_name, '%')";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':actor_name', $name);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

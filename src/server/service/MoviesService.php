@@ -17,18 +17,26 @@ class MoviesService {
     }
 
     public function addMovie(MoviesDTO $dto): bool {
-        return $this->repository->save($dto);
+        return $this->repository->addMovie($dto);
     }
 
     public function getAllMovies() {
-        return $this->repository->getAll();
+        return $this->repository->getAllMovies();
     }
 
     public function removeMovie(int $id): bool {
-        return $this->repository->removeMovie($id);
+        return $this->repository->deleteMovie($id);
     }
 
     public function findMoviesByTitle(string $title) {
-        return $this->repository->getByTitle($title);
+        return $this->repository->findByTitle($title);
+    }
+
+    public function getMovies(int $id) {
+        return $this->repository->findByID($id);
+    }
+
+    public function getMoviesByActorName(string $name) {
+        return $this->repository->findByActorName($name);
     }
 }

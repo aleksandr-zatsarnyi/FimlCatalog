@@ -5,7 +5,7 @@
   "prefer-stable": true,
   "require": {
     "php": ">=7.4",
-    "ext-mysqli": "*"
+    "ext-pdo": "*"
   },
 
   "autoload": {

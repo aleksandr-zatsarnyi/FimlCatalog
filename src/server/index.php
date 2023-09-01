@@ -9,14 +9,10 @@ use App\Server\infrastructure\db\Database;
 use App\Server\infrastructure\repository\MovieRepository;
 use App\Server\service\MoviesService;
 
-$dataBase = new Database();
-try {
-    $dataBase->init();
-} catch (Exception $e) {
-    echo 'error';
-};
+session_start();
 
-$service = new MoviesService(new MovieRepository($dataBase));
+$dataBase = new Database();
+$service = new MoviesService(new MovieRepository($dataBase->getConnection()));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
@@ -39,13 +35,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['action']) && $_GET['action'] === 'find_movie_by_title') {
-        $movie = $service->findMoviesByTitle($_GET['search_title']);
+        $movies = $service->findMoviesByTitle($_GET['search_title']);
+        $_SESSION['search_results'] = $movies;
+        header('Location: search_results.php');
+        exit;
     }
     if (isset($_GET['action']) && $_GET['action'] === 'show_sorted_movies') {
-        $sortedMovies = $service->getAllMovies();
+        $movies = $service->getAllMovies();
+        $_SESSION['search_results'] = $movies;
+        header('Location: search_results.php');
+        exit;
+    }
+    if (isset($_GET['action']) && $_GET['action'] === 'show_movie_info') {
+        $movies = $service->getMovies($_GET['movie_id']);
+        $_SESSION['search_results'] = $movies;
+        header('Location: search_results.php');
+        exit;
+    }
 
-        //echo json_encode($sortedMovies);
-        //exit;
+    if (isset($_GET['action']) && $_GET['action'] === 'find_movie_by_actor') {
+        $movies = $service->getMoviesByActorName($_GET['actor_name']);
+        $_SESSION['search_results'] = $movies;
+        header('Location: search_results.php');
+        exit;
     }
 }
 
@@ -71,14 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <li><a href="#" onclick="toggleForm('add_movie_form');">Додати фільм</a></li>
     <li><a href="#" onclick="toggleForm('delete_movie_form');">Видалити фільм</a></li>
     <li><a href="#" onclick="toggleForm('find_movie_form');">Знайти фільм за назвою</a></li>
+    <li><a href="#" onclick="toggleForm('find_movie_by_actor_form');">Find film by actor name</a></li>
     <li><a href="#" onclick="toggleForm('show_movie_info_form');">Показати інформацію про фільм</a></li>
-    <li><a href="#" onclick="loadSortedMovies();">Показати список фільмів відсортованих за назвою</a></li>
+    <li><a href="index.php?action=show_sorted_movies">Показати список фільмів відсортованих за назвою</a></li>
 </ul>
 
 <form id="delete_movie_form" class="hidden-form" method="POST" action="index.php">
     <input type="hidden" name="action" value="delete_movie">
-    <input type="text" name="movie_id" placeholder="ID фільму для видалення" required><br>
-    <button type="submit">Видалити фільм</button>
+    <input type="text" name="movie_id" placeholder="ID of Film" required><br>
+    <button type="submit">Delete the film</button>
 </form>
 
 <form id="add_movie_form" class="hidden-form" method="POST" action="index.php">
@@ -86,40 +99,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <input type="text" name="title" placeholder="Title" required><br>
     <input type="text" name="release_year" placeholder="Release Year" required><br>
     <input type="text" name="format" placeholder="Format" required><br>
-    <input type="text" name="actors" placeholder="Actors (роздільники: кома, наприклад, Actor1, Actor2)" required><br>
-    <button type="submit">Додати фільм</button>
+    <input type="text" name="actors" placeholder="Actors (comma delimiter: Actor1, Actor2)" required><br>
+    <button type="submit">Add Film</button>
 </form>
 
 <form id="find_movie_form" class="hidden-form" method="GET" action="index.php">
     <input type="hidden" name="action" value="find_movie_by_title">
-    <input type="text" name="search_title" placeholder="Назва фільму" required><br>
-    <button type="submit">Знайти фільм</button>
+    <input type="text" name="search_title" placeholder="Name of Film" required><br>
+    <button type="submit">Find Film</button>
 </form>
 
-<form id="show_movie_info_form" class="hidden-form" method="POST" action="index.php">
+<form id="find_movie_by_actor_form" class="hidden-form" method="GET" action="index.php">
+    <input type="hidden" name="action" value="find_movie_by_actor">
+    <input type="text" name="actor_name" placeholder="Actor's name" required><br>
+    <button type="submit">Find film</button>
+</form>
+
+<form id="show_movie_info_form" class="hidden-form" method="GET" action="index.php">
     <input type="hidden" name="action" value="show_movie_info">
-    <input type="text" name="movie_id" placeholder="ID фільму" required><br>
-    <button type="submit">Показати інформацію</button>
+    <input type="text" name="movie_id" placeholder="ID of Film" required><br>
+    <button type="submit">Show film info</button>
 </form>
-
-<?php
-if (!empty($movie)) {
-    echo '<div id="searchResults">';
-    echo '<h2>Search Result</h2>';
-    echo '<ul>';
-    foreach ($movie as $film) {
-        echo '<hr>';
-        echo '<li>' . htmlspecialchars($film['title']) . '</li>';
-        echo '<li>' . htmlspecialchars($film['release_year']) . '</li>';
-        echo '<li>' . htmlspecialchars($film['format']) . '</li>';
-        echo '<li>' . htmlspecialchars($film['actors']) . '</li>';
-        echo '<hr>';
-    }
-    echo '</ul>';
-} elseif (isset($movie)) {
-    echo '<p>The movie not found</p>';
-}
-?>
 
 </body>
 <script>
@@ -130,20 +130,6 @@ if (!empty($movie)) {
         } else {
             form.style.display = 'none';
         }
-    }
-
-    function loadSortedMovies() {
-        fetch('server.php?action=show_sorted_movies')
-            .then(response => response.json())
-            .then(data => {
-                displaySortedMovies(data);
-            })
-            .catch(error => {
-                console.error('Помилка отримання даних з сервера: ' + error);
-            });
-    }
-
-    function displaySortedMovies(movies) {
     }
 </script>
 </html>
