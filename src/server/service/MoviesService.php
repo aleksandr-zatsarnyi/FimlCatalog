@@ -39,4 +39,8 @@ class MoviesService {
     public function getMoviesByActorName(string $name) {
         return $this->repository->findByActorName($name);
     }
+
+    public function saveAllMovies(array $films) {
+        return $this->repository->addAllMovies($films);
+    }
 }

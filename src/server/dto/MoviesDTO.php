@@ -6,18 +6,18 @@ class MoviesDTO {
 
     private int $id;
     private string $title;
-    private int $releaseYear;
+    private string $releaseYear;
     private string $format;
     private array $stars;
 
     /**
      * @param int $id
      * @param string $title
-     * @param int $releaseYear
+     * @param string $releaseYear
      * @param string $format
      * @param array $actors
      */
-    public function __construct(string $title, int $releaseYear, string $format, array $actors) {
+    public function __construct(string $title, string $releaseYear, string $format, array $actors) {
         $this->title = $title;
         $this->releaseYear = $releaseYear;
         $this->format = $format;
@@ -41,11 +41,11 @@ class MoviesDTO {
         $this->title = $title;
     }
 
-    public function getReleaseYear(): int {
+    public function getReleaseYear(): string {
         return $this->releaseYear;
     }
 
-    public function setReleaseYear(int $releaseYear): void {
+    public function setReleaseYear(string $releaseYear): void {
         $this->releaseYear = $releaseYear;
     }
 

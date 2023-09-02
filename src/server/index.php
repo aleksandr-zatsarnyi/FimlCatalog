@@ -31,6 +31,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result) {
             echo "Фільм був успішно видалений.";
         }
+    } else if ($action === 'load_film_from_file') {
+        if ($_FILES["movie_file"]["error"] == UPLOAD_ERR_OK) {
+            $tmp_file = $_FILES["movie_file"]["tmp_name"];
+
+            $fileContent = file_get_contents($tmp_file);
+            $moviesData = explode("\n\n", $fileContent);
+            $moviesDTOs = [];
+
+            foreach ($moviesData as $movieInfo) {
+                $lines = explode("\n", $movieInfo);
+                $title = '';
+                $releaseYear = '';
+                $format = "";
+                $stars = [];
+
+                if (!empty($movieInfo)) {
+                    foreach ($lines as $line) {
+                        list($key, $value) = explode(": ", $line, 2);
+
+                        switch ($key) {
+                            case "Title":
+                                $title = $value;
+                                break;
+                            case "Release Year":
+                                $releaseYear = $value;
+                                break;
+                            case "Format":
+                                $format = $value;
+                                break;
+                            case "Stars":
+                                $stars = explode(", ", $value);
+                                break;
+                        }
+                    }
+                    $moviesDTO = new MoviesDTO($title, $releaseYear, $format, $stars);
+                    $moviesDTOs[] = $moviesDTO;
+                }
+            }
+        }
+        if (isset($moviesDTOs)) {
+            $result = $service->saveAllMovies($moviesDTOs);
+        }
     }
 }
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -61,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 }
 
-//$movies = getAllMovies();
 ?>
 
 <!DOCTYPE html>
@@ -80,12 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 <h1>Welcome</h1>
 <h2>Menu</h2>
 <ul>
-    <li><a href="#" onclick="toggleForm('add_movie_form');">Додати фільм</a></li>
-    <li><a href="#" onclick="toggleForm('delete_movie_form');">Видалити фільм</a></li>
-    <li><a href="#" onclick="toggleForm('find_movie_form');">Знайти фільм за назвою</a></li>
+    <li><a href="#" onclick="toggleForm('add_movie_form');">Add film</a></li>
+    <li><a href="#" onclick="toggleForm('delete_movie_form');">Remove film</a></li>
+    <li><a href="#" onclick="toggleForm('find_movie_form');">Find film by Title</a></li>
     <li><a href="#" onclick="toggleForm('find_movie_by_actor_form');">Find film by actor name</a></li>
-    <li><a href="#" onclick="toggleForm('show_movie_info_form');">Показати інформацію про фільм</a></li>
-    <li><a href="index.php?action=show_sorted_movies">Показати список фільмів відсортованих за назвою</a></li>
+    <li><a href="#" onclick="toggleForm('show_movie_info_form');">Show film information</a></li>
+    <li><a href="index.php?action=show_sorted_movies">Show all films sorted by title</a></li>
+    <li><a href="#" onclick="toggleForm('load_film_from_file');">load film from file</a></li>
 </ul>
 
 <form id="delete_movie_form" class="hidden-form" method="POST" action="index.php">
@@ -119,6 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <input type="hidden" name="action" value="show_movie_info">
     <input type="text" name="movie_id" placeholder="ID of Film" required><br>
     <button type="submit">Show film info</button>
+</form>
+
+<form id="load_film_from_file" class="hidden-form" method="POST" action="index.php" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="load_film_from_file">
+    <input type="file" name="movie_file" accept=".txt">
+    <input type="submit" value="load">
 </form>
 
 </body>

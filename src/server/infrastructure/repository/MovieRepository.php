@@ -66,4 +66,23 @@ class MovieRepository {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function addAllMovies(array $movies): bool {
+        $query = "INSERT INTO movies (title, release_year, format, stars) VALUES ";
+        $params = [];
+
+        foreach ($movies as $movie) {
+            $query .= "(?, ?, ?, ?), ";
+            $params[] = $movie->getTitle();
+            $params[] = $movie->getReleaseYear();
+            $params[] = $movie->getFormat();
+            $params[] = implode(',', $movie->getStars());
+        }
+
+        $query = rtrim($query, ', ');
+
+        $stmt = $this->db->prepare($query);
+
+        return $stmt->execute($params);
+    }
 }
