@@ -76,10 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 }
 function handleAddMovie(MoviesService $service) {
-    $title = $_POST['title'];
-    $release_year = $_POST['release_year'];
-    $format = $_POST['format'];
-    $actors = $_POST['actors'];
+    $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_SPECIAL_CHARS);
+    $release_year = filter_input(INPUT_POST, 'release_year', FILTER_VALIDATE_INT);
+    $format = filter_input(INPUT_POST, 'format', FILTER_SANITIZE_SPECIAL_CHARS);
+    $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    if (!$release_year || $release_year < 1900) {
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'Invalid release year.'
+        ];
+        return;
+    }
+
+    if (empty(trim($title)) || empty(trim($format)) || empty(trim($actors))) {
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'Please fill in all required fields.'
+        ];
+        return;
+    }
 
     $result = $service->addMovie(new MoviesDTO($title, $release_year, $format, explode(', ', $actors)));
 
@@ -175,6 +191,4 @@ function handleShowMovieInfo(MoviesService $service) {
 function handleFindMovieByActor(MoviesService $service) {
     $movies = $service->getMoviesByActorName($_GET['actor_name']);
     $_SESSION['search_results'] = $movies;
-    header('Location: /view/search_results.php');
-    exit;
 }
