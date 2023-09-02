@@ -32,6 +32,6 @@ $movie = null;
     <p>No movies found</p>
 <?php endif; ?>
 
-<a href="index.php">Back to Home</a>
+<a href="./../index.php">Back to Home</a>
 </body>
 </html>
