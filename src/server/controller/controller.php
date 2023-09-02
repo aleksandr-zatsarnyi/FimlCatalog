@@ -107,7 +107,16 @@ function handleAddMovie(MoviesService $service) {
 }
 
 function handleDeleteMovie(MoviesService $service) {
-    $movieId = $_POST['movie_id'];
+    $movieId = filter_input(INPUT_POST, 'movie_id', FILTER_VALIDATE_INT);
+
+    if ($movieId === false || $movieId === null) {
+    $_SESSION['operation_result'] = [
+        'success' => false,
+        'message' => 'Invalid movie ID.'
+    ];
+    return;
+}
+
     $result = $service->removeMovie($movieId);
 
     $_SESSION['operation_result'] = [
@@ -138,21 +147,23 @@ function handleLoadFilmFromFile(MoviesService $service) {
 
                     switch ($key) {
                         case "Title":
-                            $title = $value;
+                            $title = trim($value);
                             break;
                         case "Release Year":
-                            $releaseYear = $value;
+                            $releaseYear = trim($value);
                             break;
                         case "Format":
-                            $format = $value;
+                            $format = trim($value);
                             break;
                         case "Stars":
-                            $stars = explode(", ", $value);
+                            $stars = explode(", ", trim($value));
                             break;
                     }
                 }
-                $moviesDTO = new MoviesDTO($title, $releaseYear, $format, $stars);
-                $moviesDTOs[] = $moviesDTO;
+                if (!empty($title) && !empty($releaseYear) && !empty($format) && !empty($stars)) {
+                    $moviesDTO = new MoviesDTO($title, $releaseYear, $format, $stars);
+                    $moviesDTOs[] = $moviesDTO;
+                }
             }
         }
     }
@@ -170,7 +181,7 @@ function handleLoadFilmFromFile(MoviesService $service) {
 function handleFindMovieByTitle(MoviesService $service) {
     $movies = $service->findMoviesByTitle($_GET['search_title']);
     $_SESSION['search_results'] = $movies;
-    header('Location: /view/search_results.php');
+    header('Location: ./../view/search_results.php');
     exit;
 }
 
@@ -182,13 +193,23 @@ function handleShowSortedMovies(MoviesService $service) {
 }
 
 function handleShowMovieInfo(MoviesService $service) {
-    $movies = $service->getMovies($_GET['movie_id']);
-    $_SESSION['search_results'] = $movies;
-    header('Location: /view/search_results.php');
+    $movieId = filter_input(INPUT_GET, 'movie_id', FILTER_VALIDATE_INT);
+    if ($movieId === false || $movieId === null) {
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'Invalid movie ID'
+        ];
+    } else {
+        $movies = $service->getMovies($movieId);
+        $_SESSION['search_results'] = $movies;
+    }
+    header('Location: ./../view/search_results.php');
     exit;
 }
 
 function handleFindMovieByActor(MoviesService $service) {
     $movies = $service->getMoviesByActorName($_GET['actor_name']);
     $_SESSION['search_results'] = $movies;
+    header('Location: ./../view/search_results.php');
+    exit;
 }
