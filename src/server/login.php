@@ -10,11 +10,6 @@ require_once('controller/controller.php');
 <body>
 <h1>Login</h1>
 
-<?php if (isset($_SESSION['login_error'])) : ?>
-    <p style="color: red;"><?= $_SESSION['login_error'] ?></p>
-    <?php unset($_SESSION['login_error']); ?>
-<?php endif; ?>
-
 <form method="POST" action="controller/controller.php">
     <input type="text" name="username" placeholder="Username" required><br>
     <input type="password" name="password" placeholder="Password" required><br>
