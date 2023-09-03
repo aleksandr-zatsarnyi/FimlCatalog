@@ -1,12 +1,10 @@
 FROM php:apache
 
-# Установка дополнительных пакетов и расширений PHP
 RUN apt-get update && \
     apt-get install -y \
     git \
     libzip-dev
 
-#xdebug
 ARG INSTALL_XDEBUG=false
 RUN if [ ${INSTALL_XDEBUG} = true ]; \
     then \
@@ -21,12 +19,19 @@ RUN docker-php-ext-install mysqli && \
 RUN docker-php-ext-install pdo_mysql && \
     docker-php-ext-enable pdo_mysql
 
+ARG PUID=1000
+ARG PGID=1000
+RUN groupmod -o -g ${PGID} www-data && \
+    usermod -o -u ${PUID} -g www-data www-data
+
 # Source code
 RUN chown www-data:www-data /var/www
 COPY --chown=www-data:www-data ./ /var/www
 WORKDIR /var/www
 
+USER www-data
+
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-RUN composer install
+#RUN composer install
 
