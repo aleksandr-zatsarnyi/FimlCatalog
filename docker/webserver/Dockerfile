@@ -21,11 +21,12 @@ RUN docker-php-ext-install mysqli && \
 RUN docker-php-ext-install pdo_mysql && \
     docker-php-ext-enable pdo_mysql
 
-# Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
 # Source code
 RUN chown www-data:www-data /var/www
 COPY --chown=www-data:www-data ./ /var/www
 WORKDIR /var/www
+
+# Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install
 

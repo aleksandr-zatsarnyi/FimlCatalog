@@ -27,6 +27,10 @@ class UsersService {
     }
 
     public function createUser(string $login, string $password): bool {
+        $user = $this->repository->getUserByUsername($login);
+        if ($user) {
+            return false;
+        }
         return $this->repository->createUser($login, $this->hashPassword($password));
     }
 
