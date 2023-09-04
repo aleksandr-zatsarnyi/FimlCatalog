@@ -2,7 +2,7 @@ The project is an interpretation of the MVC architecture
 
 DB<->Repository<->Service<->Controller->View
 
-The project uses docker install:
+The project uses docker install: (https://docs.docker.com/desktop/install/linux-install)
 1. Install docker
 2. Open docker directory on the terminal at the root of the project
 3. Run the command - docker-compose up -d.
