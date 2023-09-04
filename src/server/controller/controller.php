@@ -21,6 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $login = $_POST['username'];
     $password = $_POST['password'];
 
+    if (empty(trim($login))) {
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'login can be empty'
+        ];
+        header('Location: ./../view/operation_result.php');
+    }
+
     if ($userService->authenticateUser($login, $password)) {
         $_SESSION['user'] = $login;
         header('Location:./../index.php');
