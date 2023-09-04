@@ -46,7 +46,11 @@ if (!isset($_SESSION['user'])) {
     <input type="hidden" name="action" value="add_movie">
     <input type="text" name="title" placeholder="Title" required><br>
     <input type="text" name="release_year" placeholder="Release Year" required><br>
-    <input type="text" name="format" placeholder="Format" required><br>
+    <select name="format" required>
+        <option value="VHS">VHS</option>
+        <option value="DVD">DVD</option>
+        <option value="Blu-Ray">Blu-Ray</option>
+    </select><br>
     <input type="text" name="actors" placeholder="Actors (comma delimiter: Actor1, Actor2)" required><br>
     <button type="submit">Add Film</button>
 </form>
