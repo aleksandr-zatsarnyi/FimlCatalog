@@ -49,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 }
 
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
     if ($action === 'add_movie') {
@@ -76,10 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 }
 function handleAddMovie(MoviesService $service) {
-    $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_SPECIAL_CHARS);
-    $release_year = filter_input(INPUT_POST, 'release_year', FILTER_VALIDATE_INT);
-    $format = filter_input(INPUT_POST, 'format', FILTER_SANITIZE_SPECIAL_CHARS);
-    $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_SPECIAL_CHARS);
+    $title = $_POST['title'];
+    $release_year = $_POST['release_year'];
+    $format = $_POST['format'];
+    $actors = $_POST['actors'];
 
     if (!$release_year || $release_year < 1900) {
         $_SESSION['operation_result'] = [
@@ -97,6 +96,10 @@ function handleAddMovie(MoviesService $service) {
         return;
     }
 
+    if (!validateActorsForm($actors)) {
+        return;
+    }
+
     $result = $service->addMovie(new MoviesDTO($title, $release_year, $format, explode(', ', $actors)));
 
     $_SESSION['operation_result'] = [
@@ -110,12 +113,12 @@ function handleDeleteMovie(MoviesService $service) {
     $movieId = filter_input(INPUT_POST, 'movie_id', FILTER_VALIDATE_INT);
 
     if ($movieId === false || $movieId === null) {
-    $_SESSION['operation_result'] = [
-        'success' => false,
-        'message' => 'Invalid movie ID.'
-    ];
-    return;
-}
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'Invalid movie ID.'
+        ];
+        return;
+    }
 
     $result = $service->removeMovie($movieId);
 
@@ -131,6 +134,15 @@ function handleLoadFilmFromFile(MoviesService $service) {
         $tmp_file = $_FILES["movie_file"]["tmp_name"];
 
         $fileContent = file_get_contents($tmp_file);
+
+        if (empty($fileContent)) {
+            $_SESSION['operation_result'] = [
+                'success' => false,
+                'message' => 'The uploaded file is empty.'
+            ];
+            return;
+        }
+
         $moviesData = explode("\n\n", $fileContent);
         $moviesDTOs = [];
 
@@ -154,9 +166,21 @@ function handleLoadFilmFromFile(MoviesService $service) {
                             break;
                         case "Format":
                             $format = trim($value);
+                            if (!in_array($format, ["VHS", "DVD", "Blu-Ray"])) {
+                                $_SESSION['operation_result'] = [
+                                    'success' => false,
+                                    'message' => 'Wrong Format of the Film'
+                                ];
+                                return;
+                            }
                             break;
                         case "Stars":
                             $stars = explode(", ", trim($value));
+                            foreach ($stars as $actor) {
+                                if (!validateActorsForm($actor)) {
+                                    return;
+                                }
+                            }
                             break;
                     }
                 }
@@ -212,4 +236,16 @@ function handleFindMovieByActor(MoviesService $service) {
     $_SESSION['search_results'] = $movies;
     header('Location: ./../view/search_results.php');
     exit;
+}
+
+function validateActorsForm(string $actor) {
+    if (!preg_match('/^[A-Za-z, -]+$/', $actor)) {
+        $_SESSION['operation_result'] = [
+            'success' => false,
+            'message' => 'Invalid characters in actor names detected in the file.'
+        ];
+        return false;
+    }
+
+    return true;
 }
