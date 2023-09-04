@@ -15,7 +15,7 @@ class MovieRepository {
     }
 
     public function getAllMovies() {
-        $query = "SELECT * FROM movies ORDER BY 'title'";
+        $query = "SELECT * FROM movies ORDER BY title COLLATE utf8mb4_unicode_ci";
         $stmt = $this->db->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

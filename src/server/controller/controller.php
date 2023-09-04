@@ -26,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             'success' => false,
             'message' => 'login can be empty'
         ];
-        header('Location: ./../view/operation_result.php');
     }
 
     if ($userService->authenticateUser($login, $password)) {
@@ -57,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 }
 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_POST['action'])) {
     $action = $_POST['action'];
     if ($action === 'add_movie') {
         handleAddMovie($moviesService);
@@ -163,38 +162,44 @@ function handleLoadFilmFromFile(MoviesService $service) {
 
             if (!empty($movieInfo)) {
                 foreach ($lines as $line) {
-                    list($key, $value) = explode(": ", $line, 2);
+                    if (!empty($line) && strpos($line, ':') !== false) {
+                        list($key, $value) = explode(": ", $line, 2);
 
-                    switch ($key) {
-                        case "Title":
-                            $title = trim($value);
-                            break;
-                        case "Release Year":
-                            $releaseYear = trim($value);
-                            break;
-                        case "Format":
-                            $format = trim($value);
-                            if (!in_array($format, ["VHS", "DVD", "Blu-Ray"])) {
-                                $_SESSION['operation_result'] = [
-                                    'success' => false,
-                                    'message' => 'Wrong Format of the Film'
-                                ];
-                                return;
-                            }
-                            break;
-                        case "Stars":
-                            $stars = explode(", ", trim($value));
-                            foreach ($stars as $actor) {
-                                if (!validateActorsForm($actor)) {
+                        switch ($key) {
+                            case "Title":
+                                $title = trim($value);
+                                break;
+                            case "Release Year":
+                                $releaseYear = trim($value);
+                                break;
+                            case "Format":
+                                $format = trim($value);
+                                if (!in_array($format, ["VHS", "DVD", "Blu-Ray"])) {
+                                    $_SESSION['operation_result'] = [
+                                        'success' => false,
+                                        'message' => 'Wrong Format of the Film'
+                                    ];
                                     return;
                                 }
-                            }
-                            break;
+                                break;
+                            case "Stars":
+                                $stars = explode(", ", trim($value));
+                                foreach ($stars as $actor) {
+                                    if (!validateActorsForm($actor)) {
+                                        $_SESSION['operation_result'] = [
+                                            'success' => false,
+                                            'message' => 'Invalid characters in actor names detected in the file.'
+                                        ];
+                                        return;
+                                    }
+                                }
+                                break;
+                        }
                     }
-                }
-                if (!empty($title) && !empty($releaseYear) && !empty($format) && !empty($stars)) {
-                    $moviesDTO = new MoviesDTO($title, $releaseYear, $format, $stars);
-                    $moviesDTOs[] = $moviesDTO;
+                    if (!empty($title) && !empty($releaseYear) && !empty($format) && !empty($stars)) {
+                        $moviesDTO = new MoviesDTO($title, $releaseYear, $format, $stars);
+                        $moviesDTOs[] = $moviesDTO;
+                    }
                 }
             }
         }
@@ -246,14 +251,6 @@ function handleFindMovieByActor(MoviesService $service) {
     exit;
 }
 
-function validateActorsForm(string $actor) {
-    if (!preg_match('/^[A-Za-z, -]+$/', $actor)) {
-        $_SESSION['operation_result'] = [
-            'success' => false,
-            'message' => 'Invalid characters in actor names detected in the file.'
-        ];
-        return false;
-    }
-
-    return true;
+function validateActorsForm(string $actor): bool {
+    return preg_match('/^[A-Za-z, -]+$/', $actor);
 }
